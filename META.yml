@@ -1,0 +1,14 @@
+name: Inline-MzScheme
+version: 0.01
+abstract: Inline module for the PLT MzScheme interpreter
+author: Autrijus Tang <autrijus@autrijus.org>
+license: perl
+distribution_type: module
+requires:
+  Inline: 0.43
+  Language::MzScheme: 0.01
+  Scalar::Util: 0.01
+no_index:
+  directory:
+    - inc
+generated_by: Module::Install version 0.33
