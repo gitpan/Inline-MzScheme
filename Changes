@@ -1,5 +1,10 @@
-Revision history for Perl extension Inline::Guile.
+[Changes for 0.02 - June 7, 2004]
 
-0.001  Sat Jul 22 12:00:00 2001
-   - First version released!
+Uses Language::MzScheme 0.02's new functions, like SCHEME_PROCP(),
+to speed up procedure mapping process.
 
+Fixed documentations.
+
+[Changes for 0.01 - June 7, 2004]
+
+Initial CPAN Release.

@@ -1,5 +1,5 @@
 name: Inline-MzScheme
-version: 0.01
+version: 0.02
 abstract: Inline module for the PLT MzScheme interpreter
 author: Autrijus Tang <autrijus@autrijus.org>
 license: perl

@@ -1,5 +1,5 @@
 package Inline::MzScheme;
-$Inline::MzScheme::VERSION = '0.01';
+$Inline::MzScheme::VERSION = '0.02';
 @Inline::MzScheme::ISA = qw(Inline);
 
 use strict;
@@ -12,6 +12,11 @@ use Carp qw(croak confess);
 =head1 NAME
 
 Inline::MzScheme - Inline module for the PLT MzScheme interpreter
+
+=head1 VERSION
+
+This document describes version 0.02 of Inline::MzScheme, released
+June 7, 2004.
 
 =head1 SYNOPSIS
 
@@ -66,8 +71,8 @@ sub build {
     close(OBJECT) or die "Unable to close object file: $obj : $!";
 }
 
-my $block;
-$block = qr/(\((?:(?>[^()]+)|(??{$block}))*\))/;
+my $block_regex;
+$block_regex = qr/(\((?:(?>[^()]+)|(??{$block_regex}))*\))/;
 
 # load the code into the interpreter
 sub load {
@@ -76,25 +81,20 @@ sub load {
     my $pkg  = $self->{API}{pkg} || 'main';
     my $env  = Language::MzScheme::scheme_basic_env();
 
-    foreach my $chunk (split($block, $code)) {
+    foreach my $chunk (split($block_regex, $code)) {
         $chunk =~ /\S/ or next;
-	my $result = eval {
-            Language::MzScheme::scheme_eval_string($chunk, $env);
-        };
-	croak "Inline::MzScheme: Problem evaluating code:\n$chunk\n\nReason: $@"
-	  if $@;
-	croak "Inline::MzScheme: Problem evaluating code:\n$chunk\n"
-	  unless $result;    # == 1;
+	my $result = Language::MzScheme::scheme_eval_string($chunk, $env) or next;
+	croak "Inline::MzScheme: Problem evaluating code:\n$chunk\n\nReason: $@" if $@;
     }
 
     # look for possible global defines
-    while ($code =~ /\bdefine\s+\W*(\S+)/g) {
+    while ($code =~ /\(define\s+\W*(\S+)/g) {
 	my $name = $1;
 
 	# try to lookup a procedure object
-	my $proc = eval {
-            Language::MzScheme::scheme_eval_string($name, $env)
-        } or next;
+        my $sym = Language::MzScheme::scheme_intern_symbol($name) or next;
+	my $proc = Language::MzScheme::scheme_eval($sym, $env) or next;
+        Language::MzScheme::SCHEME_PROCP($proc) or next;
 
         no strict 'refs';
         *{"${pkg}::$name"} = sub {
@@ -109,8 +109,9 @@ sub load {
                 } @_
             );
 
-            my $out = Language::MzScheme::scheme_make_string_output_port();
-            my $rv = Language::MzScheme::scheme_eval_string("($name $list)", $env);
+            my $out = Language::MzScheme::scheme_make_string_output_port() or return;
+            my $rv = Language::MzScheme::scheme_eval_string("($name $list)", $env) or return;
+
             Language::MzScheme::scheme_display($rv, $out);
             return Language::MzScheme::scheme_get_string_output($out);
         };
@@ -139,7 +140,7 @@ Autrijus Tang E<lt>autrijus@autrijus.orgE<gt>
 
 =head1 COPYRIGHT
 
-Copyright 2004 by Best Practical Solutions, LLC.
+Copyright 2004 by Autrijus Tang E<lt>autrijus@autrijus.orgE<gt>.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

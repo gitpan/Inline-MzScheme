@@ -14,10 +14,10 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 a670ed48d5a8a61fca5d8f008aec8f1b91aee1ec Changes
+SHA1 b2971fcca1f1bc94633af59eec3ba9b0bc9dedc9 Changes
 SHA1 3ccdfbd7b06ce8f3703e818323d7aba879102d8b MANIFEST
 SHA1 507a90272299ca2360c61c257b410a2b0d82dbbd MANIFEST.SKIP
-SHA1 2da13213a5d534f772bd72063314c31fd3eb2fed META.yml
+SHA1 704abc3da561de6d8a8b6a3e07adc5e8125ea663 META.yml
 SHA1 076ef2300e026c01506733107748eecd390571f2 Makefile.PL
 SHA1 015ef794b70a926280cbbe8c8d34c1e1329896df README
 SHA1 2b65fc08c268c16ae7097d800bacccc7b8c9c905 inc/Module/Install.pm
@@ -28,13 +28,13 @@ SHA1 aabcd47178e4e7b27e340ff5273269c93697c9c1 inc/Module/Install/Makefile.pm
 SHA1 207dfa13341a374fc78325fbeb99bc36659aef2d inc/Module/Install/Metadata.pm
 SHA1 aff9341a15c04faec47089851e43d9d4061337e7 inc/Module/Install/Win32.pm
 SHA1 8e0d347ca21bc18b380d9d1aa5910b8d078a76b7 inc/Module/Install/WriteAll.pm
-SHA1 25ca3f98c9fd8c036c648a3ffe24f93c37dfaf94 lib/Inline/MzScheme.pm
+SHA1 cad01624d13d929e15cd062e2b6ec85ffd0055c6 lib/Inline/MzScheme.pm
 SHA1 63c7ea0cfdd7643aa113c260eec9c9bf0a6ee8a0 t/0-signature.t
 SHA1 9f4aeb17d8e74dd434b37e5d6e35c2fd82f67df3 t/1-basic.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.2.3 (FreeBSD)
 
-iD8DBQFAw/CLtLPdNzw1AaARAnniAJ9I4b9HkwP1WPR1hLLJ6PkF/1ls9ACfdVYS
-W66J5730Qiy91h3nwOnT5Fg=
-=Kzps
+iD8DBQFAxCoGtLPdNzw1AaARAnQ+AJ4zQAZKXjhZfYi+IqcV6uL1+iXRYQCgnXFh
+6W9MMbXcqR3CkRopPnCjXn8=
+=CF46
 -----END PGP SIGNATURE-----
