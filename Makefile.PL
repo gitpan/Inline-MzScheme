@@ -10,8 +10,7 @@ author('Autrijus Tang <autrijus@autrijus.org>');
 license('perl');
 requires(qw(
     Inline              0.43
-    Language::MzScheme  0.01
-    Scalar::Util        0.01
+    Language::MzScheme  0.03
 ));
 can_cc() or die "This module requires a C compiler";
 

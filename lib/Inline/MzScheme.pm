@@ -1,11 +1,11 @@
 package Inline::MzScheme;
-$Inline::MzScheme::VERSION = '0.02';
+$Inline::MzScheme::VERSION = '0.03';
 @Inline::MzScheme::ISA = qw(Inline);
 
 use strict;
 
+use B ();
 use Inline ();
-use Scalar::Util       ();
 use Language::MzScheme ();
 use Carp qw(croak confess);
 
@@ -15,8 +15,8 @@ Inline::MzScheme - Inline module for the PLT MzScheme interpreter
 
 =head1 VERSION
 
-This document describes version 0.02 of Inline::MzScheme, released
-June 7, 2004.
+This document describes version 0.03 of Inline::MzScheme, released
+June 9, 2004.
 
 =head1 SYNOPSIS
 
@@ -93,15 +93,26 @@ sub load {
 
 	# try to lookup a procedure object
         my $sym = Language::MzScheme::scheme_intern_symbol($name) or next;
-	my $proc = Language::MzScheme::scheme_eval($sym, $env) or next;
+	my $proc = Language::MzScheme::scheme_lookup_global($sym, $env) or next;
         Language::MzScheme::SCHEME_PROCP($proc) or next;
 
         no strict 'refs';
         *{"${pkg}::$name"} = sub {
+            my $list = [map Language::MzScheme::mzscheme_from_perl_scalar($_), @_];
+
+            my $out = Language::MzScheme::scheme_make_string_output_port() or return;
+            my $rv = Language::MzScheme::scheme_apply($proc, scalar @$list, $list) or return;
+
+            Language::MzScheme::scheme_display($rv, $out);
+            return Language::MzScheme::scheme_get_string_output($out);
+        } if 0; # XXX - (typemap(in) Scheme_Object**) segfaults
+
+        # the unsafe version
+        *{"${pkg}::$name"} = sub {
             my $list = join(
                 ' ',
                 map {
-                    Scalar::Util::looks_like_number($_) ? $_ : do {
+                    B::svref_2object(\$_)->FLAGS & ( B::SVf_IOK() | B::SVf_NOK() ) ? $_ : do {
                         my $str = $_;
                         $str =~ s/(?:["\\])/\\/g;
                         qq("$str");
