@@ -1,3 +1,8 @@
+[Changes for 0.05 - June 13, 2004]
+
+Adapt to Language::MzScheme 0.05's auto-context -- now we don't
+need to use (car ...) on perl calls that returns one value.
+
 [Changes for 0.04 - June 11, 2004]
 
 Improved documentations and tests.

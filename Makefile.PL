@@ -11,7 +11,7 @@ license('perl');
 build_requires('Test::More');
 requires(qw(
     Inline              0.43
-    Language::MzScheme  0.04
+    Language::MzScheme  0.05
 ));
 
 WriteAll( sign => 1 );

@@ -8,7 +8,7 @@ use Math::BigInt;
 use Inline MzScheme => q{
 
 (define (square x)
-    (car (perl-multiply x x)))
+    (perl-multiply x x))
 
 (define plus_two
     (lambda (num)
@@ -20,7 +20,7 @@ use Inline MzScheme => q{
 
 (define assoc-list '((1 . 2) (3 . 4) (5 . 6)))
 (define linked-list '(1 2 3 4 5 6))
-(define hex-string (car (bigint 'as_hex)))
+(define hex-string (bigint 'as_hex))
 
 }, (bigint => Math::BigInt->new(1792));
 

@@ -1,5 +1,5 @@
 package Inline::MzScheme;
-$Inline::MzScheme::VERSION = '0.04';
+$Inline::MzScheme::VERSION = '0.05';
 @Inline::MzScheme::ISA = qw(Inline);
 
 use strict;
@@ -13,20 +13,20 @@ Inline::MzScheme - Inline module for the PLT MzScheme interpreter
 
 =head1 VERSION
 
-This document describes version 0.04 of Inline::MzScheme, released
-June 11, 2004.
+This document describes version 0.05 of Inline::MzScheme, released
+June 13, 2004.
 
 =head1 SYNOPSIS
 
     use subs 'perl_multiply'; # have to declare before Inline runs
 
     use Math::BigInt;
-    use Inline MzScheme => '
-        (define (square x) (car (perl-multiply x x)))
+    use Inline MzScheme => q{
+        (define (square x) (perl-multiply x x))
         (define assoc-list '((1 . 2) (3 . 4) (5 . 6)))
         (define linked-list '(1 2 3 4 5 6))
-        (define hex-string (car (bigint 'as_hex)))
-    ', (bigint => Math::BigInt->new(1792));
+        (define hex-string (bigint 'as_hex))
+    }, (bigint => Math::BigInt->new(1792));
 
     sub perl_multiply { $_[0] * $_[1] }
 
@@ -83,7 +83,7 @@ sub register {
 # check options
 sub validate {
     my $self = shift;
-    my $env = $self->{env} ||= Language::MzScheme->basic_env;
+    my $env = $self->{env} ||= Language::MzScheme->new;
 
     while (@_ >= 2) {
         my ($key, $value) = (shift, shift);
@@ -111,7 +111,8 @@ sub load {
     my $self = shift;
     my $code = $self->{API}{code};
     my $pkg  = $self->{API}{pkg} || 'main';
-    my $env = $self->{env} ||= Language::MzScheme->basic_env;
+    my $env = $self->{env} ||= Language::MzScheme->new;
+    $env->define_perl_wrappers;
 
     my %sym = map(
         ( $_ => 1 ),
@@ -125,8 +126,8 @@ sub load {
     foreach my $sym (sort keys %{"$pkg\::"}) {
         my $code = *{${"$pkg\::"}{$sym}}{CODE} or next;
         $sym =~ tr/_/-/;
-        next if $sym{$sym}++;
-        $env->define($sym, $code);
+        $env->define("$pkg\::$sym", $code) unless $sym{"$pkg\::$sym"}++;
+        $env->define($sym, $code) unless $sym{$sym}++;
     }
 
     SYMBOL:
