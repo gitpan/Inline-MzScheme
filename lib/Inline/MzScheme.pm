@@ -1,13 +1,11 @@
 package Inline::MzScheme;
-$Inline::MzScheme::VERSION = '0.03';
+$Inline::MzScheme::VERSION = '0.04';
 @Inline::MzScheme::ISA = qw(Inline);
 
 use strict;
 
-use B ();
 use Inline ();
 use Language::MzScheme ();
-use Carp qw(croak confess);
 
 =head1 NAME
 
@@ -15,19 +13,55 @@ Inline::MzScheme - Inline module for the PLT MzScheme interpreter
 
 =head1 VERSION
 
-This document describes version 0.03 of Inline::MzScheme, released
-June 9, 2004.
+This document describes version 0.04 of Inline::MzScheme, released
+June 11, 2004.
 
 =head1 SYNOPSIS
 
-    use Inline MzScheme => '(define (square x) (* x x))';
-    print square(10); # 100
+    use subs 'perl_multiply'; # have to declare before Inline runs
+
+    use Math::BigInt;
+    use Inline MzScheme => '
+        (define (square x) (car (perl-multiply x x)))
+        (define assoc-list '((1 . 2) (3 . 4) (5 . 6)))
+        (define linked-list '(1 2 3 4 5 6))
+        (define hex-string (car (bigint 'as_hex)))
+    ', (bigint => Math::BigInt->new(1792));
+
+    sub perl_multiply { $_[0] * $_[1] }
+
+    print square(10);           # 100
+    print $hex_string;          # 0x700
+    print $assoc_list->{1};     # 2
+    print $linked_list->[3];    # 4
 
 =head1 DESCRIPTION
 
 This module allows you to add blocks of Scheme code to your Perl
-scripts and modules.  Any procedures you define in your Scheme code
-will be available in Perl.
+scripts and modules.
+
+All user-defined procedures in your Scheme code will be available
+as Perl subroutines; association lists and hash tables are available
+as Perl hash refereces; lists and vectors available as array references;
+boxed values become scalar references.
+
+Perl subroutines in the same package are imported as Scheme primitives,
+as long as they are declared before the C<use Inline MzScheme> line.
+
+Non-word characters in Scheme identifiers are turned into C<_> for Perl.
+Underscores in Perl identifiers are turned into C<-> for Scheme.
+
+Additional objects, classes and procedures may be imported into Scheme,
+by passing them as config parameters to C<use Inline>.  See L<Inline>
+for details about this syntax.
+
+You can invoke perl objects in Scheme code with the syntax:
+
+    (object 'method arg1 arg2 ...)
+
+If your method takes named argument lists, this will do:
+
+    (object 'method 'key1 val1 'key2 val2)
 
 For information about handling MzScheme data in Perl, please see
 L<Language::MzScheme>.  This module is mostly a wrapper around
@@ -49,10 +83,11 @@ sub register {
 # check options
 sub validate {
     my $self = shift;
+    my $env = $self->{env} ||= Language::MzScheme->basic_env;
 
     while (@_ >= 2) {
-	my ($key, $value) = (shift, shift);
-	croak("Unsupported option found: \"$key\".");
+        my ($key, $value) = (shift, shift);
+        $env->define($key, $value) if $key =~ /^\w/;
     }
 }
 
@@ -71,63 +106,40 @@ sub build {
     close(OBJECT) or die "Unable to close object file: $obj : $!";
 }
 
-my $block_regex;
-$block_regex = qr/(\((?:(?>[^()]+)|(??{$block_regex}))*\))/;
-
 # load the code into the interpreter
 sub load {
     my $self = shift;
     my $code = $self->{API}{code};
     my $pkg  = $self->{API}{pkg} || 'main';
-    my $env  = Language::MzScheme::scheme_basic_env();
+    my $env = $self->{env} ||= Language::MzScheme->basic_env;
 
-    foreach my $chunk (split($block_regex, $code)) {
-        $chunk =~ /\S/ or next;
-	my $result = Language::MzScheme::scheme_eval_string($chunk, $env) or next;
-	croak "Inline::MzScheme: Problem evaluating code:\n$chunk\n\nReason: $@" if $@;
+    my %sym = map(
+        ( $_ => 1 ),
+        $env->eval('(namespace-mapped-symbols)') =~ /([^\s()]+)/g
+    );
+
+    $env->eval($code);
+
+    no strict 'refs';
+
+    foreach my $sym (sort keys %{"$pkg\::"}) {
+        my $code = *{${"$pkg\::"}{$sym}}{CODE} or next;
+        $sym =~ tr/_/-/;
+        next if $sym{$sym}++;
+        $env->define($sym, $code);
     }
 
-    # look for possible global defines
-    while ($code =~ /\(define\s+\W*(\S+)/g) {
-	my $name = $1;
-
-	# try to lookup a procedure object
-        my $sym = Language::MzScheme::scheme_intern_symbol($name) or next;
-	my $proc = Language::MzScheme::scheme_lookup_global($sym, $env) or next;
-        Language::MzScheme::SCHEME_PROCP($proc) or next;
-
-        no strict 'refs';
-        *{"${pkg}::$name"} = sub {
-            my $list = [map Language::MzScheme::mzscheme_from_perl_scalar($_), @_];
-
-            my $out = Language::MzScheme::scheme_make_string_output_port() or return;
-            my $rv = Language::MzScheme::scheme_apply($proc, scalar @$list, $list) or return;
-
-            Language::MzScheme::scheme_display($rv, $out);
-            return Language::MzScheme::scheme_get_string_output($out);
-        } if 0; # XXX - (typemap(in) Scheme_Object**) segfaults
-
-        # the unsafe version
-        *{"${pkg}::$name"} = sub {
-            my $list = join(
-                ' ',
-                map {
-                    B::svref_2object(\$_)->FLAGS & ( B::SVf_IOK() | B::SVf_NOK() ) ? $_ : do {
-                        my $str = $_;
-                        $str =~ s/(?:["\\])/\\/g;
-                        qq("$str");
-                    };
-                } @_
-            );
-
-            my $out = Language::MzScheme::scheme_make_string_output_port() or return;
-            my $rv = Language::MzScheme::scheme_eval_string("($name $list)", $env) or return;
-
-            Language::MzScheme::scheme_display($rv, $out);
-            return Language::MzScheme::scheme_get_string_output($out);
-        };
+    SYMBOL:
+    foreach my $sym (grep !$sym{$_}, $env->eval('(namespace-mapped-symbols)') =~ /([^\s()]+)/g) {
+        my $obj = $env->lookup($sym);
+        $sym =~ s/\W/_/g;
+        foreach my $type (qw( CODE GLOB )) {
+            $obj->isa($type) or next;
+            *{"$pkg\::$sym"} = $obj->can('to_'.lc($type).'ref')->($obj);
+            next SYMBOL;
+        }
+        *{"$pkg\::$sym"} = \$obj;
     }
-
 }
 
 # no info implementation yet

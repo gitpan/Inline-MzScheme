@@ -10,6 +10,7 @@
 ^MakeMaker-\d
 ^.*\.hi
 ^_Inline
+^t/_Inline
 ^blibdirs
 ^pm_to_blib
 ~$

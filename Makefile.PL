@@ -8,10 +8,10 @@ version_from('lib/Inline/MzScheme.pm');
 abstract_from('lib/Inline/MzScheme.pm');
 author('Autrijus Tang <autrijus@autrijus.org>');
 license('perl');
+build_requires('Test::More');
 requires(qw(
     Inline              0.43
-    Language::MzScheme  0.03
+    Language::MzScheme  0.04
 ));
-can_cc() or die "This module requires a C compiler";
 
 WriteAll( sign => 1 );
